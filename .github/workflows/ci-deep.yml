@@ -4,6 +4,9 @@ env:
   MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 3 * * 3,6" # at 3:00am UTC on Wednesday and Saturday
   workflow_dispatch:
@@ -44,7 +47,7 @@ jobs:
 
   notify-on-failure:
     if: failure()
-    needs: ["lint", "build", "test-integration", "test-invariant", "test-fork"]
+    needs: ["lint", "build", "test-invariant"]
     runs-on: "ubuntu-latest"
     steps:
       - name: "Send Slack notification"
