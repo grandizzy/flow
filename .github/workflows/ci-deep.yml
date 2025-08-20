@@ -29,31 +29,16 @@ on:
         required: false
 
 jobs:
-  lint:
-    uses: "sablier-labs/gha-utils/.github/workflows/evm-lint.yml@main"
-
   build:
     uses: "sablier-labs/gha-utils/.github/workflows/forge-build.yml@main"
 
   test-invariant:
-    needs: ["lint", "build"]
+    needs: ["build"]
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
       foundry-invariant-depth: ${{ fromJSON(inputs.invariantDepth || '200') }}
       foundry-invariant-runs: ${{ fromJSON(inputs.invariantRuns || '50000') }}
       foundry-profile: "test-optimized"
+      foundry-version: "nightly"
       match-path: "tests/invariant/**/*.sol"
       name: "Invariant tests"
-
-  notify-on-failure:
-    if: failure()
-    needs: ["lint", "build", "test-invariant"]
-    runs-on: "ubuntu-latest"
-    steps:
-      - name: "Send Slack notification"
-        uses: "rtCamp/action-slack-notify@v2"
-        env:
-          SLACK_CHANNEL: "#ci-notifications"
-          SLACK_MESSAGE: "CI Workflow failed for ${{ github.repository }} on branch ${{ github.ref }} at job ${{ github.job }}."
-          SLACK_USERNAME: "GitHub CI"
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
