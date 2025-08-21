@@ -93,7 +93,7 @@ jobs:
           echo "FOUNDRY_FUZZ_SEED=$seed" >> $GITHUB_ENV
 
       - name: "Run the tests"
-        run: 'PROPTEST_MAX_LOCAL_REJECTS=4294967295 FOUNDRY_DEBUG=1 forge test --match-path "${{ inputs.match-path }}"'
+        run: 'FOUNDRY_DEBUG=1 forge test --match-path "${{ inputs.match-path }}"'
 
       - name: "Add summary"
         run: | # shell
