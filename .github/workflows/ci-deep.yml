@@ -34,7 +34,7 @@ jobs:
 
   test-invariant:
     needs: ["build"]
-    uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
+    uses: ./.github/workflows/forge-test.yml
     with:
       foundry-invariant-depth: ${{ fromJSON(inputs.invariantDepth || '200') }}
       foundry-invariant-runs: ${{ fromJSON(inputs.invariantRuns || '50000') }}

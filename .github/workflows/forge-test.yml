@@ -1,0 +1,101 @@
+name: "Test a Forge project"
+
+on:
+  workflow_call:
+    inputs:
+      cache-path:
+        default: |
+          cache
+          node_modules
+          out
+          out-optimized
+        required: false
+        type: "string"
+
+      foundry-fuzz-runs:
+        default: 1000
+        required: false
+        type: "number"
+
+      foundry-invariant-depth:
+        default: 20
+        required: false
+        type: "number"
+
+      foundry-invariant-runs:
+        default: 20
+        required: false
+        type: "number"
+
+      foundry-profile:
+        default: "default"
+        required: false
+        type: "string"
+
+      foundry-version:
+        default: "stable"
+        description: "Foundry version to use"
+        required: false
+        type: "string"
+
+      fuzz-seed:
+        default: false
+        required: false
+        type: "boolean"
+
+      match-path:
+        required: true
+        type: "string"
+
+      name:
+        default: "Forge tests"
+        required: false
+        type: "string"
+
+    secrets:
+      API_KEY_INFURA:
+        required: false
+      MAINNET_RPC_URL:
+        required: false
+      ROUTEME_API_KEY:
+        required: false
+
+jobs:
+  forge-test:
+    env:
+      API_KEY_INFURA: ${{ secrets.API_KEY_INFURA }}
+      FOUNDRY_INVARIANT_DEPTH: ${{ inputs.foundry-invariant-depth }}
+      FOUNDRY_INVARIANT_RUNS: ${{ inputs.foundry-invariant-runs }}
+      FOUNDRY_FUZZ_RUNS: ${{ inputs.foundry-fuzz-runs }}
+      FOUNDRY_PROFILE: ${{ inputs.foundry-profile }}
+      MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+      ROUTEME_API_KEY: ${{ secrets.ROUTEME_API_KEY }}
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: ${{ inputs.foundry-version }}
+
+      - name: "Restore the cached build"
+        uses: "sablier-labs/gha-utils/.github/actions/evm-cache@main"
+        with:
+          cache-path: ${{ inputs.cache-path }}
+          fail-on-cache-miss: true
+
+      - name: "Generate fuzz seed that changes weekly to avoid burning through RPC allowance"
+        if: ${{ inputs.fuzz-seed }}
+        run: |
+          seed=$(echo $(($EPOCHSECONDS / 604800)))
+          echo "FOUNDRY_FUZZ_SEED=$seed" >> $GITHUB_ENV
+
+      - name: "Run the tests"
+        run: 'FOUNDRY_DEBUG=1 forge test --match-path "${{ inputs.match-path }}"'
+
+      - name: "Add summary"
+        run: | # shell
+          echo "## Result for ${{ inputs.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
